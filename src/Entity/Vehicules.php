@@ -38,7 +38,7 @@ class Vehicules
     private ?\DateTimeInterface $UpdatedAt = null;
 
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?Garage $Garage = null;
 
     #[ORM\OneToMany(targetEntity: Picture::class, mappedBy: 'Vehicule', orphanRemoval: true)]

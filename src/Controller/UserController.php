@@ -14,6 +14,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 use App\Repository\GarageRepository;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 #[Route('api/users', name: 'app_api_users_')]
 
@@ -62,11 +63,15 @@ class UserController extends AbstractController
         $newInfos = $request->getContent();
         $user = $this->repository->findOneBy(['id' => $id]);
 
-        $this->serializer->deserialize($newInfos, User::class, 'json',
-        [AbstractNormalizer::OBJECT_TO_POPULATE => $user]);
+        $this->serializer->deserialize(
+            $newInfos,
+            User::class,
+            'json',
+            [AbstractNormalizer::OBJECT_TO_POPULATE => $user]
+        );
         $user->setUpdatedAt(new \DateTime);
 
-        if(!$user) {
+        if (!$user) {
             return $this->json(
                 ['message' => 'Erreur lors de la modification du compte employé']
             );
@@ -86,7 +91,7 @@ class UserController extends AbstractController
 
         $user = $this->repository->findOneBy(['id' => $id]);
 
-        if (!$user){
+        if (!$user) {
             return $this->json(
                 ['message' => 'Erreur lors de la suppression du compte employé']
             );
@@ -99,4 +104,35 @@ class UserController extends AbstractController
 
         return new JsonResponse($responseData, Response::HTTP_CREATED, [], true);
     }
+
+    #[ROUTE('/connexion', name: 'login', methods: 'POST')]
+    public function login(#[CurrentUser] ?User $user): JsonResponse
+    {
+        if(null === $user){
+            return new JsonResponse(['message' => 'Missing credentials'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        return new JsonResponse([
+            'user' => $user->getEmail(),
+            'apiToken' => $user->getApiToken(),
+            'roles' => $user->getRoles(),
+        ]);
+    }
 }
+
+
+    // {
+    //     $id = $request->getPayLoad()->get('id');
+
+    //     $user = $this->repository->findOneBy(['id' => $id]);
+
+    //     if(!$user){
+    //         return $this->json(
+    //             ['message' => 'Utilisateur introuvable']
+    //         );
+    //     }
+
+    //     $responseData = $this->serializer->serialize($user, 'json', ['groups' => ['user']]);
+
+    //     return new JsonResponse($responseData, Response::HTTP_ACCEPTED, [], true);
+    // }

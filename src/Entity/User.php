@@ -5,10 +5,12 @@ namespace App\Entity;
 use App\Repository\UserRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
-class User
+class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -31,10 +33,6 @@ class User
     #[ORM\Column(length: 255)]
     private ?string $Password = null;
 
-    #[ORM\Column]
-    #[Groups(['user'])]
-    private ?int $Role = null;
-
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     #[Groups(['user'])]
     private ?\DateTimeInterface $CreatedAt = null;
@@ -44,8 +42,34 @@ class User
     private ?\DateTimeInterface $UpdatedAt = null;
 
     #[ORM\ManyToOne(inversedBy: 'users')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?Garage $Garage = null;
+
+    #[ORM\Column(length: 255)]
+    private ?string $apiToken = null;
+
+    #[ORM\Column(type: 'json')]
+    #[Groups(['user'])]
+    private array $roles = [];
+
+    public function getUserIdentifier(): string
+    {
+        return (string) $this->Email;
+    }
+
+    public function getRoles(): array
+    {
+        $roles = $this->roles;
+
+        return array_unique($roles);
+    }
+
+    public function setRoles(array $roles): static
+    {
+        $this->roles = $roles;
+
+        return $this;
+    }
 
     public function getId(): ?int
     {
@@ -100,18 +124,6 @@ class User
         return $this;
     }
 
-    public function getRole(): ?int
-    {
-        return $this->Role;
-    }
-
-    public function setRole(int $Role): static
-    {
-        $this->Role = $Role;
-
-        return $this;
-    }
-
     public function getCreatedAt(): ?\DateTimeInterface
     {
         return $this->CreatedAt;
@@ -146,5 +158,27 @@ class User
         $this->Garage = $Garage;
 
         return $this;
+    }
+
+    /** @throws \Exception */
+    public function __construct()
+    {
+        $this->apiToken = bin2hex(random_bytes(20));
+    }
+
+    public function getApiToken(): ?string
+    {
+        return $this->apiToken;
+    }
+
+    public function setApiToken(string $apiToken): static
+    {
+        $this->apiToken = $apiToken;
+
+        return $this;
+    }
+    
+    public function eraseCredentials(): void
+    {
     }
 }
